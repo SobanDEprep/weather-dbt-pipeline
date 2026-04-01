@@ -21,7 +21,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          pip show dbt-snowflake | grep Location
+          which dbt || find / -name "dbt" -type f 2>/dev/null | head -5
 
       - name: Set up dbt profiles
         run: |
