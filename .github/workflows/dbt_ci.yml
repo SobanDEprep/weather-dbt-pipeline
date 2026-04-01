@@ -1,0 +1,57 @@
+name: dbt CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  dbt-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Set up dbt profiles
+        run: |
+          mkdir -p ~/.dbt
+          cat <<EOF > ~/.dbt/profiles.yml
+          dbt_weather:
+            target: dev
+            outputs:
+              dev:
+                type: snowflake
+                account: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+                user: ${{ secrets.SNOWFLAKE_USER }}
+                password: ${{ secrets.SNOWFLAKE_PASSWORD }}
+                role: ${{ secrets.SNOWFLAKE_ROLE }}
+                warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+                database: ${{ secrets.SNOWFLAKE_DATABASE }}
+                schema: STAGING
+                threads: 4
+          EOF
+
+      - name: dbt deps
+        working-directory: dbt_weather
+        run: dbt deps
+
+      - name: dbt seed
+        working-directory: dbt_weather
+        run: dbt seed
+
+      - name: dbt run
+        working-directory: dbt_weather
+        run: dbt run
+
+      - name: dbt test
+        working-directory: dbt_weather
+        run: dbt test
